@@ -39,6 +39,10 @@ func TestMain(m *testing.M) {
 
 var wbbrowser playwright.BrowserContext
 
+func delay(i int) {
+	time.Sleep(time.Duration(i) * time.Second)
+}
+
 func TestWebKit(t *testing.T) {
 	log.Println("Running WebKit test")
 	var errp error
@@ -105,8 +109,8 @@ func TestWebKit(t *testing.T) {
 		if err != nil {
 			t.Fatalf("could not wait for load state: %v", err)
 		}
-		time.Sleep(5 * time.Second)
-		log.Println("mandatory 5 second sleep while recaptcha loads")
+		delay(10)
+		log.Println("mandatory 10 second sleep while recaptcha loads\noverkill but its safer")
 
 		btn := page.GetByRole("button", playwright.PageGetByRoleOptions{
 			Name: "Refresh score now!",
@@ -114,11 +118,17 @@ func TestWebKit(t *testing.T) {
 		if btn == nil {
 			t.Fatalf("could not find button to refresh captcha score")
 		}
+		err = btn.ScrollIntoViewIfNeeded()
+		if err != nil {
+			t.Fatalf("could not scroll to button: %v", err)
+		}
+		delay(2)
 		btn.Click()
 		log.Println("refreshing captcha score")
 		err = page.WaitForLoadState(playwright.PageWaitForLoadStateOptions{
 			State: playwright.LoadStateNetworkidle,
 		})
+		delay(2)
 		elmt, err := page.QuerySelector(`#score`)
 		if err != nil {
 			t.Fatalf("could not find element: %v", err)
