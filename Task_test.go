@@ -19,14 +19,12 @@ func init() {
 	if err != nil {
 		log.Fatalf("Error installing playwright: %v", err)
 	}
-	os.Setenv("HEADLESS", "false")
 	log.Println("starting Tests")
 }
 
 var pw *playwright.Playwright
 
 func TestMain(m *testing.M) {
-	os.Setenv("HEADLESS", "false")
 	var err error
 	pw, err = playwright.Run()
 	if err != nil {
@@ -34,7 +32,6 @@ func TestMain(m *testing.M) {
 	}
 
 	code := m.Run()
-	pw.Stop()
 	os.Exit(code)
 }
 
@@ -77,7 +74,7 @@ func TestWebKit(t *testing.T) {
 	log.Println("Running WebKit test")
 	var errp error
 	//proxy := "161.0.70.152:5741:tnzpwplz:156y8h5d4l6q"
-	wbbrowser, errp = playwrightprepack.PlaywrightInit("", 1, false, pw)
+	wbbrowser, errp = playwrightprepack.PlaywrightInit(nil, 1, false, pw)
 	if errp != nil {
 		t.Fatalf("could not initialize playwright: %v", errp)
 	}
@@ -120,7 +117,10 @@ func TestWebKit(t *testing.T) {
 		if tx2 == "present (failed)" {
 			t.Fatalf("webdriver detected, test failed")
 		}
-		page.Close()
+		err = page.Close()
+		if err != nil {
+			t.Fatalf("could not close page: %v", err)
+		}
 
 	})
 
@@ -179,7 +179,7 @@ func TestWebKit(t *testing.T) {
 			t.Fatalf("could not convert score to int: %v", err)
 		}
 		if sc < 7 {
-			t.Fatalf("recaptcha score lower than 0.7")
+			t.Fatalf("recaptcha score lower than 0.7 \nScore is %v", sc)
 		}
 		log.Println("recaptcha score: ", tx)
 		_ = page.Close()

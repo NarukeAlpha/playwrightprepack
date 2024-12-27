@@ -33,21 +33,13 @@ var IpAgentList = []string{
 	"iPhone 15", "iPhone 15 Plus", "iPhone 15 Pro", "iPhone 15 Pro Max",
 }
 
-func pp(p string) *playwright.Proxy {
-	st := strings.Split(p, ":")
-	fmt.Printf(" proxy string %v \n", st)
-	var pwps playwright.Proxy
-	if len(st) == 4 {
-		pwps = playwright.Proxy{
-			Server:   st[0] + ":" + st[1],
-			Username: &st[2],
-			Password: &st[3],
-		}
-		return &pwps
-	}
-	return nil
-}
-func PlaywrightInit(prx string, plt int8, hdl bool, pw *playwright.Playwright) (playwright.BrowserContext, error) {
+// PlaywrightInit Returns a browser with predefined settings. one browser per proxy.
+//
+// Proxy - instantly pass the proxy from the pre-built collection, alternatively can be nil
+// platform - 1 for webkit - 2 for firefox - any other number defaults to chromium
+// headless - boolean for headless
+// playwright - playwright instance to create the browser from
+func PlaywrightInit(prx *playwright.Proxy, plt int8, hdl bool, pw *playwright.Playwright) (playwright.BrowserContext, error) {
 	var dev = pw.Devices[IpAgentList[rand.Intn(len(IpAgentList)-1)]]
 	var platform playwright.Browser
 	var err error
@@ -93,7 +85,7 @@ func PlaywrightInit(prx string, plt int8, hdl bool, pw *playwright.Playwright) (
 		//},
 		IsMobile:          playwright.Bool(dev.IsMobile),
 		JavaScriptEnabled: playwright.Bool(true),
-		Proxy:             pp(prx),
+		Proxy:             prx,
 		UserAgent:         playwright.String(dev.UserAgent),
 		Viewport:          dev.Viewport,
 	})
