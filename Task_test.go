@@ -2,6 +2,7 @@ package playwrightprepack_test
 
 import (
 	"log"
+	rand2 "math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -43,11 +44,40 @@ func delay(i int) {
 	time.Sleep(time.Duration(i) * time.Second)
 }
 
+func TestProxyLoad(t *testing.T) {
+	t.Log("testing proxy struct load")
+	t.Run("ProxyLoad", func(t *testing.T) {
+		var proxylist []*playwright.Proxy
+		proxylist, err := playwrightprepack.ProxyLoad("./test.csv")
+		if err != nil {
+			t.Fatalf("Error loading proxy list: %v", err)
+		} else if len(proxylist) != 32400 {
+			t.Fatalf("Expected 32400 proxies, got %d", len(proxylist))
+		}
+		for i := 0; i < 500; i++ {
+			randomint := rand2.Intn(len(proxylist))
+			proxy := proxylist[randomint]
+			//usr := "tusr"
+			//psw := "tpw"
+			usr := *proxy.Username
+			psw := *proxy.Password
+			if proxy.Server != "1.0.0.27:933" {
+				t.Fatalf("Expected 1.0.0.27:933, got %v", proxy.Server)
+			} else if usr != "tusr" {
+				t.Fatalf("Expected tusr, got %v", proxy.Username)
+			} else if psw != "tpw" {
+				t.Fatalf("Expected tpw, got %v", proxy.Password)
+			}
+		}
+
+	})
+}
+
 func TestWebKit(t *testing.T) {
 	log.Println("Running WebKit test")
 	var errp error
 	//proxy := "161.0.70.152:5741:tnzpwplz:156y8h5d4l6q"
-	wbbrowser, errp = playwrightprepack.PlaywrightInit("", pw)
+	wbbrowser, errp = playwrightprepack.PlaywrightInit("", 1, false, pw)
 	if errp != nil {
 		t.Fatalf("could not initialize playwright: %v", errp)
 	}
@@ -123,9 +153,12 @@ func TestWebKit(t *testing.T) {
 			t.Fatalf("could not scroll to button: %v", err)
 		}
 		delay(2)
-		btn.Click()
+		err = btn.Click()
+		if err != nil {
+			t.Fatalf("could not click button: %v", err)
+		}
 		log.Println("refreshing captcha score")
-		err = page.WaitForLoadState(playwright.PageWaitForLoadStateOptions{
+		_ = page.WaitForLoadState(playwright.PageWaitForLoadStateOptions{
 			State: playwright.LoadStateNetworkidle,
 		})
 		delay(2)
@@ -149,10 +182,28 @@ func TestWebKit(t *testing.T) {
 			t.Fatalf("recaptcha score lower than 0.7")
 		}
 		log.Println("recaptcha score: ", tx)
-		page.Close()
+		_ = page.Close()
 
 	})
+	//t.Run("UniqueFP", func(t *testing.T) {
+	//	page, err := wbbrowser.NewPage()
+	//	if err != nil {
+	//		t.Fatalf("could not create page: %v", err)
+	//	}
+	//	_, err = page.Goto("https://amiunique.org/fingerprint")
+	//	if err != nil {
+	//		t.Fatalf("could not navigate to page: %v", err)
+	//	}
+	//	time.Sleep(10 * time.Minute)
+	//})
 
-	wbbrowser.Close()
+	err := wbbrowser.Close()
+	if err != nil {
+		t.Fatalf("Coudln't close webkit browser")
+	}
+	err = pw.Stop()
+	if err != nil {
+		t.Fatalf("Coudln't stop playwright")
+	}
 
 }

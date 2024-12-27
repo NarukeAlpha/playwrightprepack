@@ -1,10 +1,13 @@
 package playwrightprepack
 
 import (
+	"encoding/csv"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"math/rand"
+	"os"
 	"strings"
 
 	"github.com/playwright-community/playwright-go"
@@ -44,29 +47,41 @@ func pp(p string) *playwright.Proxy {
 	}
 	return nil
 }
-func PlaywrightInit(prx string, pw *playwright.Playwright) (playwright.BrowserContext, error) {
-	dev := pw.Devices[IpAgentList[rand.Intn(len(IpAgentList)-1)]]
-	//st := strings.Split(prx, ":")
-	//var pwps playwright.Proxy
-	//var srv string
-	//if len(st) == 4 {
-	//	srv = st[0] + ":" + st[1]
-	//	pwps = playwright.Proxy{
-	//		Server:   srv,
-	//		Username: &st[2],
-	//		Password: &st[3],
-	//	}
-	//
-	//} else {
-	//	pwps = playwright.Proxy{}
-	//}
-	browser, err := pw.WebKit.Launch(playwright.BrowserTypeLaunchOptions{
+func PlaywrightInit(prx string, plt int8, hdl bool, pw *playwright.Playwright) (playwright.BrowserContext, error) {
+	var dev = pw.Devices[IpAgentList[rand.Intn(len(IpAgentList)-1)]]
+	var platform playwright.Browser
+	var err error
+
+	switch plt {
+	case 1:
+		platform, err = pw.WebKit.Launch(playwright.BrowserTypeLaunchOptions{
+			Headless: playwright.Bool(hdl),
+		})
+		if err != nil {
+			return nil, errors.Join(fmt.Errorf("could not launch WebKit browser"), err)
+		}
+	case 2:
+		platform, err = pw.Firefox.Launch(playwright.BrowserTypeLaunchOptions{
+			Headless: playwright.Bool(hdl),
+		})
+		if err != nil {
+			return nil, errors.Join(fmt.Errorf("could not launch Firefox browser"), err)
+		}
+	default:
+		platform, err = pw.Chromium.Launch(playwright.BrowserTypeLaunchOptions{
+			Headless: playwright.Bool(hdl),
+		})
+		if err != nil {
+			return nil, errors.Join(fmt.Errorf("could not launch Chromium browser"), err)
+		}
+	}
+	platform, err = pw.WebKit.Launch(playwright.BrowserTypeLaunchOptions{
 		Headless: playwright.Bool(false),
 	})
 	if err != nil {
 		return nil, errors.Join(fmt.Errorf("could not launch browser"), err)
 	}
-	bsr, err := browser.NewContext(playwright.BrowserNewContextOptions{
+	bsr, err := platform.NewContext(playwright.BrowserNewContextOptions{
 		//RecordHarContent: playwright.HarContentPolicyAttach,
 		//RecordHarMode: playwright.HarModeFull,
 		//RecordHarPath: playwright.String("test.har"),
@@ -117,10 +132,45 @@ func PlaywrightInit(prx string, pw *playwright.Playwright) (playwright.BrowserCo
 	}
 	err = bsr.AddInitScript(script)
 	if err != nil {
-		return nil, errors.Join(fmt.Errorf("Could not add JS script"), err)
+		return nil, errors.Join(fmt.Errorf("could not add JS script"), err)
 	}
 
 	log.Printf("Browser Launched, user agent: %v \n", dev)
 	log.Println()
 	return bsr, nil
+}
+
+func ProxyLoad(dir string) ([]*playwright.Proxy, error) {
+	var pps []*playwright.Proxy
+	f, err := os.Open(dir)
+	if err != nil {
+		return nil, errors.Join(fmt.Errorf("could not open file provided \nBad directory?"), err)
+	}
+
+	csvr := csv.NewReader(f)
+	for i := 0; true; i++ {
+		r, err := csvr.Read()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			return nil, errors.Join(fmt.Errorf("CSV reader failed - err : %v", err), err)
+		}
+		s := strings.Split(r[0], ":")
+		srv := s[0] + ":" + s[1]
+		usr := s[2]
+		pss := s[3]
+
+		var p = playwright.Proxy{
+			Server:   srv,
+			Username: &usr,
+			Password: &pss,
+		}
+		pps = append(pps, &p)
+
+	}
+	err = f.Close()
+	if err != nil {
+		log.Fatalf("failed to close file - err: %v", err)
+	}
+	return pps, nil
 }
