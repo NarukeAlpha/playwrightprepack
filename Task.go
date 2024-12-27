@@ -1,4 +1,6 @@
-package playwrightprepack
+// Package Playwrightprepack pre-sets a lot of the default configurations I usually
+// use to scrape or test websites.
+package Playwrightprepack
 
 import (
 	"encoding/csv"
@@ -13,12 +15,7 @@ import (
 	"github.com/playwright-community/playwright-go"
 )
 
-type ProxyStruct struct {
-	ip  string
-	usr string
-	pw  string
-}
-
+// IpAgentList contains all iphones from iphone X to 16.
 var IpAgentList = []string{
 	//"iPhone 6", "iPhone 6 plus",
 	//"iPhone 7", "iPhone 7 plus",
@@ -31,6 +28,7 @@ var IpAgentList = []string{
 	"iPhone 13 mini", "iPhone 13", "iPhone 13 Pro", "iPhone 13 Pro Max",
 	"iPhone 14 mini", "iPhone 14", "iPhone 14 Pro", "iPhone 14 Pro Max",
 	"iPhone 15", "iPhone 15 Plus", "iPhone 15 Pro", "iPhone 15 Pro Max",
+	"iPhone 16", "iPhone 16 Pro", "iPhone 16 Pro Max",
 }
 
 // PlaywrightInit Returns a browser with predefined settings. one browser per proxy.
@@ -132,6 +130,7 @@ func PlaywrightInit(prx *playwright.Proxy, plt int8, hdl bool, pw *playwright.Pl
 	return bsr, nil
 }
 
+// ProxyLoad Returns a Slice of all proxies from a given csv file
 func ProxyLoad(dir string) ([]*playwright.Proxy, error) {
 	var pps []*playwright.Proxy
 	f, err := os.Open(dir)

@@ -1,4 +1,4 @@
-package playwrightprepack_test
+package Playwrightprepack_test
 
 import (
 	"log"
@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/playwright-community/playwright-go"
-	"playwrightprepack"
+	Playwrightprepack "playwrightprepack"
 )
 
 func init() {
@@ -45,7 +45,7 @@ func TestProxyLoad(t *testing.T) {
 	t.Log("testing proxy struct load")
 	t.Run("ProxyLoad", func(t *testing.T) {
 		var proxylist []*playwright.Proxy
-		proxylist, err := playwrightprepack.ProxyLoad("./test.csv")
+		proxylist, err := Playwrightprepack.ProxyLoad("./test.csv")
 		if err != nil {
 			t.Fatalf("Error loading proxy list: %v", err)
 		} else if len(proxylist) != 32400 {
@@ -74,7 +74,7 @@ func TestWebKit(t *testing.T) {
 	log.Println("Running WebKit test")
 	var errp error
 	//proxy := "161.0.70.152:5741:tnzpwplz:156y8h5d4l6q"
-	wbbrowser, errp = playwrightprepack.PlaywrightInit(nil, 1, false, pw)
+	wbbrowser, errp = Playwrightprepack.PlaywrightInit(nil, 1, false, pw)
 	if errp != nil {
 		t.Fatalf("could not initialize playwright: %v", errp)
 	}
