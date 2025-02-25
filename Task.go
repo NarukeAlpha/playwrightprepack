@@ -1,6 +1,6 @@
 // Package Playwrightprepack pre-sets a lot of the default configurations I usually
 // use to scrape or test websites.
-package Playwrightprepack
+package playwrightprepack
 
 import (
 	"encoding/csv"
@@ -14,22 +14,6 @@ import (
 
 	"github.com/playwright-community/playwright-go"
 )
-
-// IpAgentList contains all iphones from iphone X to 16.
-var IpAgentList = []string{
-	//"iPhone 6", "iPhone 6 plus",
-	//"iPhone 7", "iPhone 7 plus",
-	//"iPhone 8", "iPhone 8 plus",
-	"iPhone X", "iPhone XR",
-	"iPhone XS", "iPhone XS Max",
-	"iPhone 11", "iPhone 11 Pro", "iPhone 11 Pro Max",
-	"iPhone SE (2nd generation)",
-	"iPhone 12 mini", "iPhone 12", "iPhone 12 Pro", "iPhone 12 Pro Max",
-	"iPhone 13 mini", "iPhone 13", "iPhone 13 Pro", "iPhone 13 Pro Max",
-	"iPhone 14 mini", "iPhone 14", "iPhone 14 Pro", "iPhone 14 Pro Max",
-	"iPhone 15", "iPhone 15 Plus", "iPhone 15 Pro", "iPhone 15 Pro Max",
-	"iPhone 16", "iPhone 16 Pro", "iPhone 16 Pro Max",
-}
 
 // PlaywrightInit Returns a browser with predefined settings. one browser per proxy.
 //
@@ -46,20 +30,18 @@ func PlaywrightInit(prx *playwright.Proxy, plt int8, hdl bool, pw *playwright.Pl
 	case 1:
 		platform, err = pw.WebKit.Launch(playwright.BrowserTypeLaunchOptions{
 			Headless: playwright.Bool(hdl),
+			Args:     StealthFlags,
 		})
-		if err != nil {
-			return nil, errors.Join(fmt.Errorf("could not launch WebKit browser"), err)
-		}
 	case 2:
 		platform, err = pw.Firefox.Launch(playwright.BrowserTypeLaunchOptions{
 			Headless: playwright.Bool(hdl),
+			Args:     StealthFlags,
 		})
-		if err != nil {
-			return nil, errors.Join(fmt.Errorf("could not launch Firefox browser"), err)
-		}
 	default:
+		StealthFlags = append(StealthFlags, "--disable-gpu") // Chromium-specific
 		platform, err = pw.Chromium.Launch(playwright.BrowserTypeLaunchOptions{
 			Headless: playwright.Bool(hdl),
+			Args:     StealthFlags,
 		})
 		if err != nil {
 			return nil, errors.Join(fmt.Errorf("could not launch Chromium browser"), err)
@@ -86,6 +68,10 @@ func PlaywrightInit(prx *playwright.Proxy, plt int8, hdl bool, pw *playwright.Pl
 		Proxy:             prx,
 		UserAgent:         playwright.String(dev.UserAgent),
 		Viewport:          dev.Viewport,
+		Permissions: []string{
+			"geolocation",
+			"notifications",
+		},
 	})
 
 	if err != nil {
