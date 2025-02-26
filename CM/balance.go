@@ -1,15 +1,15 @@
 package CM
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
-	"strings"
+	"time"
 )
 
-func getBalance(apiKey string) (float32, error) {
+func GetBalance(apiKey string) (float32, error) {
 	body := cKey{
 		ClientKey: apiKey,
 	}
@@ -17,12 +17,13 @@ func getBalance(apiKey string) (float32, error) {
 	if err != nil {
 		return 0, err
 	}
-	req, err := http.NewRequest("POST", "https://api.capmonster.cloud/getBalance", io.NopCloser(strings.NewReader(string(jb))))
+	bodyreader := bytes.NewReader(jb)
+	req, err := http.NewRequest("POST", "https://api.capmonster.cloud/getBalance", bodyreader)
 	if err != nil {
 		return 0, err
 	}
 	clt := http.Client{
-		Timeout: 30000,
+		Timeout: time.Minute * 5,
 	}
 	resp, err := clt.Do(req)
 	if err != nil {

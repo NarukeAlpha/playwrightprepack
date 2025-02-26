@@ -1,6 +1,6 @@
 // Package Playwrightprepack pre-sets a lot of the default configurations I usually
 // use to scrape or test websites.
-package playwrightprepack
+package ppp
 
 import (
 	"encoding/csv"

@@ -1,4 +1,4 @@
-package playwrightprepack_test
+package ppp_test
 
 import (
 	"log"
@@ -9,7 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/NarukeAlpha/playwrightprepack"
+	ppp "github.com/NarukeAlpha/playwrightprepack"
+	"github.com/NarukeAlpha/playwrightprepack/CM"
 	"github.com/playwright-community/playwright-go"
 )
 
@@ -45,7 +46,7 @@ func TestProxyLoad(t *testing.T) {
 	t.Log("testing proxy struct load")
 	t.Run("ProxyLoad", func(t *testing.T) {
 		var proxylist []*playwright.Proxy
-		proxylist, err := playwrightprepack.ProxyLoad("./test.csv")
+		proxylist, err := ppp.ProxyLoad("./test.csv")
 		if err != nil {
 			t.Fatalf("Error loading proxy list: %v", err)
 		} else if len(proxylist) != 32400 {
@@ -74,7 +75,7 @@ func TestWebKit(t *testing.T) {
 	log.Println("Running WebKit test")
 	var errp error
 	//proxy := "161.0.70.152:5741:tnzpwplz:156y8h5d4l6q"
-	wbbrowser, errp = playwrightprepack.PlaywrightInit(nil, 1, false, pw)
+	wbbrowser, errp = ppp.PlaywrightInit(nil, 1, false, pw)
 	if errp != nil {
 		t.Fatalf("could not initialize playwright: %v", errp)
 	}
@@ -205,5 +206,42 @@ func TestWebKit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Coudln't stop playwright")
 	}
+
+}
+
+func TestTurnstileCaptcha(t *testing.T) {
+
+	apikey := os.Getenv("CapMonsterKey")
+	proxy := os.Getenv("TestProxy")
+	websiteKey := os.Getenv("WebsiteKey")
+	websiteURL := os.Getenv("Website")
+	if apikey == "" || proxy == "" || websiteKey == "" || websiteURL == "" {
+		t.Fatal("OS Envs not set")
+	}
+	balance, err := CM.GetBalance(apikey)
+	if err != nil || balance < 1 {
+		t.Fatal(balance, err)
+	}
+	pxy := strings.Split(proxy, ":")
+	pproxy := playwright.Proxy{
+		Server:   pxy[0] + ":" + pxy[1],
+		Username: &pxy[2],
+		Password: &pxy[3],
+	}
+	captchabrowser, err := ppp.PlaywrightInit(&pproxy, 1, false, pw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	page, err := captchabrowser.NewPage()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = page.Goto(websiteURL); err != nil {
+		t.Fatal(err)
+	}
+	if err = CM.HandleTurnstileCookie(apikey, page, websiteKey, pproxy); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(10 * time.Minute)
 
 }
